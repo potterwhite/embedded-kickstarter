@@ -17,10 +17,16 @@
     INSTALL_BIN_DIR="${INSTALL_TOP_DIR}/bin"
 
     # 5. sysroot places
-    SDK_HOST_PREFIX="/development/docker_volumes/src/sdk/rk3588s-linux/buildroot/output/rockchip_rk3588/host"
-    CMAKE_SYSROOT="${SDK_HOST_PREFIX}/aarch64-buildroot-linux-gnu/sysroot"
+    CMAKE_SYSROOT="/development/docker_volumes/src/sdk/rk3588s-linux/buildroot/output/rockchip_rk3588/host/aarch64-buildroot-linux-gnu/sysroot"
 
     SRC_TOP_DIR="${BASH_SCRIPT_DIR}/src"
+
+    # MODIFICATION START
+    TOOLCHAINS_DIR="${BASH_SCRIPT_DIR}/toolchains"
+    # ARGC and ARGC_2ND_OPTION are deprecated in favor of a more flexible approach
+    COMMAND=""
+    PLATFORM=""
+    # MODIFICATION END
 
     ARGC="0"
     ARGC_2ND_OPTION=""
@@ -32,34 +38,61 @@
 }
 
 1_1_arguments_validation() {
-    if [ "$#" == "0" ]; then
-        ARGC=1
-    elif [ "$#" == "1" ]; then
-        ARGC=2
-
-        if [ "$1" = "${MACRO_OPTION_1_CLEAN}" ] ||
-            [ "$1" = "${MACRO_OPTION_2_BUILD}" ] ||
-            [ "$1" = "${MACRO_OPTION_3_BUILD_AFTER_CLEAN}" ] ||
-            [ "$1" = "${MACRO_OPTION_4_INSTALL}" ] ||
-            [ "$1" = "${MACRO_OPTION_5_TEST}" ]; then
-            ARGC_2ND_OPTION=${1}
-        else
-            1_2_helper_print
-            exit 1
-        fi
-    else
+    if [ "$#" -eq 0 ]; then
         1_2_helper_print
         exit 1
     fi
+
+    # The first argument is always the command
+    COMMAND=$1
+    shift # Consume the first argument
+
+    # The next optional argument could be the platform for 'build' and 'cb' commands
+    if [ "$COMMAND" = "${MACRO_OPTION_2_BUILD}" ] || [ "$COMMAND" = "${MACRO_OPTION_3_BUILD_AFTER_CLEAN}" ]; then
+        if [ "$#" -gt 0 ]; then
+            PLATFORM=$1
+            shift
+        else
+            PLATFORM="native" # Default to native build if no platform is specified
+        fi
+    fi
+
+    # Check if the command is valid
+    case "$COMMAND" in
+        "${MACRO_OPTION_1_CLEAN}"|"${MACRO_OPTION_2_BUILD}"|"${MACRO_OPTION_3_BUILD_AFTER_CLEAN}"|"${MACRO_OPTION_4_INSTALL}"|"${MACRO_OPTION_5_TEST}")
+            # Valid command, do nothing
+            ;;
+        *)
+            echo "Error: Unknown command '$COMMAND'"
+            1_2_helper_print
+            exit 1
+            ;;
+    esac
+
 }
+
 
 1_2_helper_print() {
     echo
-    echo "./build.sh clean"
-    echo "./build.sh build"
-    echo "./build.sh test"
-    echo "./build.sh cb(clean and build)"
-    echo "no other options"
+    echo "Usage: ./build.sh <command> [platform]"
+    echo
+    echo "Commands:"
+    echo "  clean                - Remove build and install directories"
+    echo "  build [platform]     - Configure and build the project for a specific platform"
+    echo "  cb [platform]        - Clean, then build and install for a specific platform"
+    echo "  install              - Install the already built project"
+    echo "  test                 - Build and run tests (for native platform only)"
+    echo
+    echo "Available platforms:"
+    echo "  native(default)               - Build for the host machine (x86_64, default)"
+
+    # Dynamically find and list available toolchains
+    if [ -d "${TOOLCHAINS_DIR}" ]; then
+        for toolchain_file in $(find "${TOOLCHAINS_DIR}" -type f -name "*.cmake"); do
+            platform_name=$(basename "${toolchain_file}" .cmake)
+            echo "  ${platform_name}         - Cross-compile using ${platform_name}.cmake"
+        done
+    fi
     echo
 }
 
@@ -80,10 +113,35 @@
 }
 
 2_3_cmake_generate_makefile() {
-    cmake \
-        -S ${BASH_SCRIPT_DIR} \
-        -B ${BUILD_TOP_DIR} \
+    local CMAKE_ARGS=(
+        -S "${BASH_SCRIPT_DIR}"
+        -B "${BUILD_TOP_DIR}"
         "-DCMAKE_INSTALL_PREFIX=${INSTALL_TOP_DIR}"
+    )
+
+    if [ -n "$PLATFORM" ] && [ "$PLATFORM" != "native" ]; then
+        local TOOLCHAIN_FILE="${TOOLCHAINS_DIR}/${PLATFORM}.cmake"
+        if [ -f "${TOOLCHAIN_FILE}" ]; then
+            echo "Using toolchain file for platform '${PLATFORM}': ${TOOLCHAIN_FILE}"
+            CMAKE_ARGS+=("-DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE}")
+        else
+            echo "Error: Toolchain file for platform '${PLATFORM}' not found at '${TOOLCHAIN_FILE}'"
+            1_2_helper_print
+            exit 1
+        fi
+    else
+        echo "Configuring for native build (x86_64)."
+        # we will add the vcpkg toolchain file here for native builds
+        # For a generic template, this is fine.
+    fi
+
+    cmake "${CMAKE_ARGS[@]}"
+
+    ################################ original obsoleted #################################
+    # cmake \
+    #     -S ${BASH_SCRIPT_DIR} \
+    #     -B ${BUILD_TOP_DIR} \
+    #     "-DCMAKE_INSTALL_PREFIX=${INSTALL_TOP_DIR}"
 }
 
 2_4_make_execution() {
@@ -128,37 +186,35 @@
 }
 
 3_0_exec_as_requirement() {
-    if [ $ARGC == "1" ]; then
-        1_2_helper_print
-        return
-    fi
-
-    if [ $ARGC == "2" ]; then
-        if [ $ARGC_2ND_OPTION == ${MACRO_OPTION_1_CLEAN} ]; then
+    case "$COMMAND" in
+        "${MACRO_OPTION_1_CLEAN}")
             2_2_clean_all
             2_1_preparation
-        elif [ $ARGC_2ND_OPTION == ${MACRO_OPTION_2_BUILD} ]; then
+            ;;
+        "${MACRO_OPTION_2_BUILD}")
             2_3_cmake_generate_makefile
             2_4_make_execution
-        elif [ $ARGC_2ND_OPTION == ${MACRO_OPTION_3_BUILD_AFTER_CLEAN} ]; then
+            ;;
+        "${MACRO_OPTION_3_BUILD_AFTER_CLEAN}")
             2_2_clean_all
             2_1_preparation
             2_3_cmake_generate_makefile
             2_4_make_execution
             2_6_install_target
-        elif [ $ARGC_2ND_OPTION == ${MACRO_OPTION_4_INSTALL} ]; then
+            ;;
+        "${MACRO_OPTION_4_INSTALL}")
             2_6_install_target
-        elif [ $ARGC_2ND_OPTION == ${MACRO_OPTION_5_TEST} ]; then
+            ;;
+        "${MACRO_OPTION_5_TEST}")
             2_7_make_test
             2_6_install_target
-        fi
-    fi
+            ;;
+    esac
 }
 
 main() {
     1_0_load_env
     1_1_arguments_validation "$@"
-
     3_0_exec_as_requirement
 }
 
