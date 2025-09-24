@@ -29,3 +29,14 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 # 让可执行文件在目标板上能找到位于同一目录下的.so文件
 set(CMAKE_INSTALL_RPATH "$ORIGIN")
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+
+# VI. 设置其他工具链程序 (Set other toolchain utilities)
+# 显式指定这些工具可以防止CMake错误地找到宿主机上的版本
+set(CMAKE_STRIP ${TOOLCHAIN_BIN_DIR}/aarch64-buildroot-linux-gnu-strip)
+set(CMAKE_AR ${TOOLCHAIN_BIN_DIR}/aarch64-buildroot-linux-gnu-ar)
+set(CMAKE_LINKER ${TOOLCHAIN_BIN_DIR}/aarch64-buildroot-linux-gnu-ld)
+set(CMAKE_NM ${TOOLCHAIN_BIN_DIR}/aarch64-buildroot-linux-gnu-nm)
+set(CMAKE_OBJCOPY ${TOOLCHAIN_BIN_DIR}/aarch64-buildroot-linux-gnu-objcopy)
+set(CMAKE_OBJDUMP ${TOOLCHAIN_BIN_DIR}/aarch64-buildroot-linux-gnu-objdump)
+set(CMAKE_RANLIB ${TOOLCHAIN_BIN_DIR}/aarch64-buildroot-linux-gnu-ranlib)
+
