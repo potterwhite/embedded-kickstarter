@@ -1,4 +1,3 @@
-
 #include <atomic>
 #include <chrono>
 #include <csignal>  // For signal handling
@@ -9,19 +8,19 @@
 #include <thread>
 #include <vector>
 
-// 假设 kcurrent_lib_name 在此编译单元中可用
-// 这里我们定义一个临时的，实际项目中可能来自别处
+// Assume kcurrent_lib_name is available in this compilation unit
+// Here we define a temporary one; in a real project, it might come from elsewhere
 const std::string_view kcurrent_app_name = PROJECT_NAME;
 
-// --- 全局用于信号处理 ---
+// --- Global for signal handling ---
 // static bool g_stop_signal_received = false;
-static std::atomic<bool> g_stop_signal_received(false);  // 修改后的代码
+static std::atomic<bool> g_stop_signal_received(false);  // Modified code
 
 void SignalHandler(int signal_num) {
 	g_stop_signal_received = true;
 	std::ostringstream oss;
 	oss << "\nInterrupt signal (" << signal_num << ") received. Shutting down...";
-	// 使用 Logger 而不是 cerr
+	// Use Logger instead of cerr
 	std::cout << oss.str() << std::endl;
 }
 
@@ -37,7 +36,7 @@ bool isRelease() {
 
 int main(int argc, char* argv[]) {
 
-	// 1. 设置日志级别 (例如，只记录 Warning 及以上)
+	// 1. Set log level (e.g., only log Warning and above)
 	if (isRelease() == true) {
 		// logger.setLevel(kinfo);
 	} else {

@@ -169,20 +169,17 @@
 }
 
 2_7_make_test() {
-    # 确保构建目录存在
     2_1_preparation
 
-    # 生成 CMake 构建文件，启用 BUILD_TEST
     cmake \
         -S ${BASH_SCRIPT_DIR} \
         -B ${BUILD_TOP_DIR} \
         "-DCMAKE_INSTALL_PREFIX=${INSTALL_TOP_DIR}" \
         "-DBUILD_TEST=TRUE"
 
-    # 仅构建测试目标（假设 test/CMakeLists.txt 定义了目标，例如 'test_main'）
     make -C ${BUILD_TOP_DIR}/test ${MAKE_VERBOSE_OPTION}
 
-    echo "测试构建完成。"
+    echo "Test suit build complete。"
 }
 
 3_0_exec_as_requirement() {

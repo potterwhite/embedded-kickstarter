@@ -2,19 +2,19 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-# I. Config PROJECT_NAME And C++ Standards
-set(PROJECT_NAME "executableTemplate")
-project(${PROJECT_NAME} CXX)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON) # 通常需要
+# I. Config PROJECT_NAME And C Standards
+set(PROJECT_NAME "c_executableTemplate")
+project(${PROJECT_NAME} C)               # Changed from CXX to C
+set(CMAKE_C_STANDARD 11)                 # Changed from CXX_STANDARD 17 to C11 (Common for modern C)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)  # Usually required
 
-# II. 追溯顶层目录
+# II. Trace Top-level Directory
 set(TOP_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(SRC_DIR "${TOP_DIR}/src")
 set(INCLUDE_DIR "${TOP_DIR}/include")
 
-# III. 设置build type
+# III. Set build type
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
     # set(CMAKE_BUILD_TYPE "Release")
@@ -36,7 +36,9 @@ set(STRINGENT_COMPILE_OPTIONS
     -Wcast-qual
     -Wcast-align
     -Wunused
-    -Woverloaded-virtual
+    # -Woverloaded-virtual  <-- Removed: This is C++ specific (virtual functions), invalid in C.
+    -Wstrict-prototypes     # <-- Added: Essential for C. Enforces void foo(void) instead of void foo().
+    -Wmissing-prototypes    # <-- Added: Good practice to ensure functions are declared in headers.
     -Wformat=2
     -Wformat-security
     -Wformat-nonliteral
@@ -68,23 +70,26 @@ endif()
 
 ########################### End of Section V ##################################
 
-# V. 设置 RPATH (关键！让可执行文件在ARM板上运行时能找到 .so 文件) $ORIGIN 表示可执行文件所在的目录。 这意味着你需要把所依赖的所有 lib*.so这些文件 和编译出来的
-# bin(可执行文件)放在ARM板上的【同一个目录】下。
+# V. Set RPATH (Crucial! Allows the executable to find .so files when running on the ARM board).
+# $ORIGIN represents the directory where the executable is located.
+# This means you need to place all dependent lib*.so files and the compiled
+# bin (executable) in the [same directory] on the ARM board.
 set(CMAKE_INSTALL_RPATH "$ORIGIN")
-# 在构建时也应用 RPATH，这样你在PC上构建目录中测试（如果架构匹配）或检查RPATH时也能看到效果
+# Apply RPATH during the build as well, so you can see the effect when testing
+# in the build directory on the PC (if the architecture matches) or checking RPATH.
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
 
 # ##################################################################################################
-# VI. 依赖管理 (Dependency Management)
-# 在这里定义你的项目所需要的所有库。
-# 这样src/CMakeLists.txt就不需要知道具体的依赖了。
-# 对于一个干净的模板，我们先留空。未来Helmsman项目会在这里添加OpenCV等。
-set(COMMON_LIBRARIES "") # 例如: "OpenCV::opencv" "Threads::Threads"
+# VI. Dependency Management
+# Define all libraries required by your project here.
+# This way src/CMakeLists.txt does not need to know the specific dependencies.
+# For a clean template, we leave it empty for now. Future Helmsman projects will add OpenCV etc. here.
+set(COMMON_LIBRARIES "") # Example: "m" (math library) "pthread"
 # ##################################################################################################
 
 
-# VII. 添加子目录
+# VII. Add Subdirectories
 add_subdirectory(${SRC_DIR})
 
 option(BUILD_TEST "Build the tests for the project" OFF)

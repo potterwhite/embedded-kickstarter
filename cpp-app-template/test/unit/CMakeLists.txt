@@ -1,8 +1,7 @@
 # test/unit/CMakeLists.txt
 # *********************************************************************************************
 
-# 定义模块目录名
-
+# Define module directory name
 set(MODULE_DIR "app-bin")
 
 file(GLOB TEST_SOURCES
@@ -10,8 +9,8 @@ file(GLOB TEST_SOURCES
 )
 
 # sources
-# 我们需要编译业务逻辑的实现文件 processor_logic.cpp
-# 注意：这里应该只包含 .cpp 文件，.h 文件由编译器自动处理
+# We need to compile the business logic implementation file processor_logic.cpp
+# Note: This should only include .cpp files; .h files are handled automatically by the compiler
 file(GLOB MODULE_SOURCES
     # "${CMAKE_CURRENT_SOURCE_DIR}/processor_logic.cpp"
 )

@@ -1,21 +1,20 @@
-
 # I. Config Executable
 set(BIN_NAME "${PROJECT_NAME}.bin")
-add_executable(${BIN_NAME} main.cpp)
+add_executable(${BIN_NAME} main.c) # Changed main.cpp to main.c
 
 # II. Make ${PROJECT_NAME} share with src files
 target_compile_definitions(${BIN_NAME} PRIVATE
     PROJECT_NAME="${PROJECT_NAME}"
 )
 
-# III. 指定头文件搜索路径
+# III. Specify header file search paths
 target_include_directories(${BIN_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${INCLUDE_DIR}
 )
 
-# IV. 链接公共库
-# 直接链接在顶层CMakeLists.txt中定义的COMMON_LIBRARIES列表
+# IV. Link common libraries
+# Directly link the COMMON_LIBRARIES list defined in the top-level CMakeLists.txt
 target_link_libraries(${BIN_NAME} PRIVATE
     ${COMMON_LIBRARIES}
 )
@@ -42,4 +41,3 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "MinSizeRel"
         message(WARNING "Strip command not found. Executable will not be stripped automatically.")
     endif()
 endif()
-
